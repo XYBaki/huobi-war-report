@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>崩坏：星穹铁道「货币战争」玩法拆解分析报告</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tektur:wght@400;500;700&family=Outfit:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0a0a0f; --bg2:#14141c; --bg3:#1c1c2a;
+  --ink:#e0e0ea; --text:#c8c8d8; --muted:#80808f;
+  --rule:#2a2a3a; --accent:#FFE600; --accent2:#00e5ff; --accent3:#ff3d7f;
+  --fh:'Tektur','Noto Sans CJK SC',sans-serif;
+  --fb:'Outfit','Noto Sans CJK SC',sans-serif;
+  --fm:'JetBrains Mono','Courier New',monospace;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior:smooth; scroll-padding-top:64px; }
+body { background:var(--bg); color:var(--text); font-family:var(--fb); font-size:16px; line-height:1.8; overflow-x:hidden;
+  background-image: radial-gradient(ellipse at 20% 0%,rgba(255,230,0,0.03),transparent 50%), radial-gradient(ellipse at 80% 100%,rgba(0,229,255,0.02),transparent 50%); background-attachment:fixed; }
+
+.progress-bar { position:fixed; top:0; left:0; height:3px; background:linear-gradient(90deg,var(--accent),var(--accent2)); z-index:200; transition:width 0.15s; width:0; }
+.topbar { position:fixed; top:0; left:0; right:0; height:56px; background:rgba(10,10,15,0.88); backdrop-filter:blur(20px); border-bottom:1px solid var(--rule); z-index:100; display:flex; align-items:center; padding:0 1.5rem; }
+.topbar-brand { font-family:var(--fh); font-size:0.95rem; color:var(--accent); letter-spacing:0.05em; flex-shrink:0; }
+.topbar-nav { display:flex; gap:0.15rem; margin-left:1.5rem; overflow-x:auto; scrollbar-width:none; }
+.topbar-nav::-webkit-scrollbar { display:none; }
+.topbar-nav a { font-size:0.76rem; color:var(--muted); text-decoration:none; padding:0.3rem 0.55rem; border-radius:6px; white-space:nowrap; transition:all 0.2s; }
+.topbar-nav a:hover { color:var(--ink); background:var(--bg3); }
+.topbar-nav a.active { color:var(--accent); background:rgba(255,230,0,0.08); }
+.topbar-pct { margin-left:auto; font-family:var(--fm); font-size:0.75rem; color:var(--muted); flex-shrink:0; }
+.menu-btn { display:none; position:fixed; top:0.6rem; left:0.75rem; z-index:200; background:var(--bg2); border:1px solid var(--rule); border-radius:8px; width:36px; height:36px; color:var(--accent); cursor:pointer; font-size:1rem; align-items:center; justify-content:center; }
+
+.hero { min-height:40vh; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; padding:5rem 2rem 2.5rem; position:relative; overflow:hidden;
+  background: radial-gradient(ellipse at 30% 20%,rgba(255,230,0,0.06),transparent 60%), radial-gradient(ellipse at 70% 80%,rgba(0,229,255,0.04),transparent 60%); }
+.hero::before { content:''; position:absolute; inset:0; background:repeating-linear-gradient(90deg,transparent,transparent 2px,rgba(255,230,0,0.008) 2px,rgba(255,230,0,0.008) 4px); pointer-events:none; }
+.hero-tag { font-family:var(--fm); font-size:0.72rem; letter-spacing:0.25em; color:var(--accent2); text-transform:uppercase; margin-bottom:1rem; }
+.hero h1 { font-family:var(--fh); font-size:clamp(1.7rem,4.5vw,2.8rem); font-weight:500; line-height:1.15; color:var(--ink); margin-bottom:0.8rem; max-width:720px; }
+.hero h1 .hl { color:var(--accent); }
+.hero-sub { font-size:0.95rem; color:var(--muted); max-width:520px; line-height:1.6; }
+.hero-meta { display:flex; gap:1.5rem; flex-wrap:wrap; font-family:var(--fm); font-size:0.75rem; color:var(--muted); margin-top:1.2rem; justify-content:center; }
+.hero-meta span { color:var(--accent2); }
+
+.container { max-width:820px; margin:0 auto; padding:0 1.5rem; }
+.chapter { padding:2.5rem 0 1rem; border-top:1px solid var(--rule); }
+.chapter:first-of-type { border-top:none; }
+.chapter-header { display:flex; align-items:center; gap:0.85rem; margin-bottom:1.75rem; }
+.chapter-num { font-family:var(--fm); font-size:0.78rem; font-weight:700; color:var(--bg); background:var(--accent); padding:0.2rem 0.5rem; border-radius:4px; flex-shrink:0; }
+.chapter-title { font-family:var(--fh); font-size:clamp(1.25rem,3vw,1.65rem); font-weight:500; color:var(--ink); }
+
+.chapter-content h3 { font-family:var(--fh); font-size:1.1rem; font-weight:500; color:var(--accent2); margin:1.75rem 0 0.65rem; padding-left:0.65rem; border-left:3px solid var(--accent2); }
+.chapter-content h4 { font-family:var(--fh); font-size:1.05rem; font-weight:500; color:var(--accent); margin:1.25rem 0 0.5rem; padding:0.4rem 0.75rem; background:var(--bg2); border-radius:6px; border-left:3px solid var(--accent); }
+.chapter-content p { margin-bottom:0.85rem; color:var(--text); line-height:1.85; }
+.chapter-content p strong { color:var(--accent); font-weight:600; }
+.chapter-content p .hl { color:var(--accent); font-weight:600; }
+.chapter-content p .hl-accent { color:var(--accent2); font-weight:600; }
+.chapter-content p .hl-warn { color:var(--accent3); font-weight:600; }
+
+.chapter-content ul { list-style:none; margin:0.5rem 0 1rem; padding-left:0.5rem; }
+.chapter-content ul li { margin-bottom:0.4rem; color:var(--text); padding-left:1.1rem; position:relative; line-height:1.75; }
+.chapter-content ul li::before { content:'\25b8'; position:absolute; left:0; color:var(--accent2); font-size:0.85em; }
+.chapter-content ul li strong { color:var(--accent); font-weight:600; }
+
+.card { background:var(--bg2); border:1px solid var(--rule); border-radius:12px; padding:1.1rem 1.3rem; margin-bottom:1rem; }
+.card-brand { border-color:rgba(255,230,0,0.3); background:linear-gradient(135deg,var(--bg2) 0%,rgba(255,230,0,0.06) 100%); }
+.card-accent { border-color:rgba(0,229,255,0.3); background:linear-gradient(135deg,var(--bg2) 0%,rgba(0,229,255,0.06) 100%); }
+.card-warn { border-color:rgba(255,61,127,0.3); background:linear-gradient(135deg,var(--bg2) 0%,rgba(255,61,127,0.06) 100%); }
+.card-title { font-family:var(--fh); font-size:1rem; font-weight:500; margin-bottom:0.6rem; color:var(--accent); }
+
+.table-wrap { overflow-x:auto; overflow-y:auto; max-height:560px; border-radius:8px; border:1px solid var(--rule); margin:1.25rem 0; }
+table { width:100%; border-collapse:collapse; font-size:0.85rem; }
+td { padding:0.5rem 0.7rem; border-bottom:1px solid var(--rule); color:var(--text); vertical-align:top; line-height:1.7; }
+tr:first-child td { background:var(--bg3); color:var(--accent); font-weight:700; border-bottom:2px solid var(--accent); position:sticky; top:0; }
+tr:nth-child(even) td { background:rgba(255,255,255,0.015); }
+tr:hover td { background:var(--bg3); }
+td strong { color:var(--accent); }
+
+.note { background:var(--bg2); border-left:3px solid var(--accent); padding:0.75rem 1rem; border-radius:0 6px 6px 0; margin:1rem 0; font-size:0.88rem; color:var(--text); line-height:1.8; }
+.note strong { color:var(--accent); }
+.note-accent { border-left-color:var(--accent2); }
+.note-accent strong { color:var(--accent2); }
+.note-warn { border-left-color:var(--accent3); }
+.note-warn strong { color:var(--accent3); }
+
+.figure { margin:1.5rem 0; text-align:center; }
+.figure img { max-width:100%; height:auto; border-radius:8px; box-shadow:0 4px 20px rgba(0,0,0,0.4); border:1px solid var(--rule); cursor:zoom-in; transition:transform 0.3s; }
+.figure img:hover { transform:scale(1.01); }
+.fig-row { display:flex; gap:12px; flex-wrap:wrap; margin:1.5rem 0; }
+.fig-row .figure { flex:1; min-width:280px; margin:0; }
+.figure-caption { padding:0.5rem 0 0; font-size:0.75rem; color:var(--muted); font-family:var(--fm); }
+
+.judgment-box { background:rgba(255,230,0,0.04); border:1px solid rgba(255,230,0,0.3); border-radius:12px; padding:1rem 1.25rem; margin:1rem 0; }
+.j-label { font-family:var(--fm); font-size:0.72rem; color:var(--accent); font-weight:700; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:0.4rem; }
+.j-content { color:var(--text); font-size:0.9rem; line-height:1.85; }
+.j-content p { margin-bottom:0.5rem; }
+.j-content strong { color:var(--accent); }
+
+footer { border-top:1px solid var(--rule); padding:2rem; text-align:center; margin-top:1.5rem; }
+footer p { font-size:0.8rem; color:var(--muted); margin-bottom:0.25rem; }
+footer .ft-brand { font-family:var(--fh); font-size:0.85rem; color:var(--accent); margin-bottom:0.3rem; }
+
+.back-top { position:fixed; bottom:1.5rem; right:1.5rem; width:38px; height:38px; background:var(--bg2); border:1px solid var(--rule); border-radius:50%; color:var(--accent); display:flex; align-items:center; justify-content:center; cursor:pointer; opacity:0; transition:all 0.3s; z-index:50; text-decoration:none; font-size:1.1rem; }
+.back-top.show { opacity:1; }
+.back-top:hover { border-color:var(--accent); transform:translateY(-2px); }
+
+.lightbox { position:fixed; inset:0; background:rgba(0,0,0,0.92); z-index:300; display:none; align-items:center; justify-content:center; padding:2rem; cursor:zoom-out; }
+.lightbox.show { display:flex; }
+.lightbox img { max-width:95%; max-height:95vh; border-radius:8px; }
+
+.figure img {
+  background: linear-gradient(110deg, #1c1c2a 8%, #2a2a3a 18%, #1c1c2a 33%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s linear infinite;
+  transition: opacity 0.3s ease;
+}
+.figure img.loaded { background:none; animation:none; opacity:1; }
+.figure img:not(.loaded) { opacity:0.7; }
+@keyframes shimmer { 0%{background-position:200% 0;} 100%{background-position:-200% 0;} }
+
+@media (max-width:768px) {
+  .topbar { padding:0 0.75rem; height:48px; }
+  .topbar-nav { display:none; }
+  .topbar-nav.open { display:flex; position:fixed; top:48px; left:0; right:0; background:var(--bg2); border-bottom:1px solid var(--rule); padding:0.5rem 0.75rem; flex-direction:column; gap:0.15rem; }
+  .topbar-nav.open a { padding:0.5rem; }
+  .menu-btn { display:flex; }
+  .topbar-brand { font-size:0.85rem; }
+  .hero { padding:4rem 1rem 2rem; }
+  .container { padding:0 1rem; }
+  .chapter { padding:2rem 0 0.75rem; }
+}
+</style>
+</head>
+<body>
+
+<div class="progress-bar" id="progressBar"></div>
+<div class="menu-btn" onclick="document.querySelector('.topbar-nav').classList.toggle('open')">&#9776;</div>
+
+<div class="topbar">
+  <div class="topbar-brand">HSR · CURRENCY WAR</div>
+  <nav class="topbar-nav" id="topnav">
+    <a href="#ch1">01 玩法定位</a>
+    <a href="#ch2">02 核心机制</a>
+    <a href="#ch3">03 社区分析</a>
+    <a href="#ch4">04 需求理论</a>
+    <a href="#ch5">05 整体评价</a>
+  </nav>
+  <div class="topbar-pct" id="progText">0%</div>
+</div>
+
+<section class="hero">
+  <div class="hero-tag">GAMEPLAY ANALYSIS &middot; 2026</div>
+  <h1>崩坏：星穹铁道<span class="hl">「货币战争」</span>玩法拆解分析报告</h1>
+  <p class="hero-sub">回合制 &times; 自走棋融合玩法 &middot; 深度体验拆解 &middot; 社区反馈与需求层次分析</p>
+  <div class="hero-meta">
+    <div>作者 <span>XYBaki</span></div>
+    <div>游玩时长 <span>200+ 小时</span></div>
+    <div>最高段位 <span>A8-20（财富造物主）</span></div>
+    <div>样本 <span>B站 1814 条</span></div>
+  </div>
+</section>
+
+<div class="container">
+
+<!-- ==================== CH.01 玩法核心定位 ==================== -->
+<section class="chapter" id="ch1">
+<div class="chapter-header"><span class="chapter-num">CH.01</span><h2 class="chapter-title">玩法核心定位</h2></div>
+<div class="chapter-content">
+
+<p>结合深度游玩体验来看，<strong>"货币战争"</strong> 是《崩坏：星穹铁道》基于原有回合制战斗、<span class="hl">融合自走棋玩法</span>打造的 PVE 模式。其核心在于引入自走棋核心体系（包括 D 牌、升星、1-5 费卡牌、羁绊、事件、强化事件等），同时针对新玩法调整角色技能与机制，既适配玩法核心需求，又能满足偏爱大数字数值伤害、希望"牢"角色发挥价值的玩家诉求。</p>
+
+<div class="card card-accent">
+  <div class="card-title">游玩说明</div>
+  <ul>
+    <li><strong>游玩时长</strong>：累计深度游玩 200+ 小时，覆盖标准 / 超频博弈模式</li>
+    <li><strong>达成段位</strong>：财富造物主（最高段位）第 20 段（A8-20）</li>
+    <li><strong>核心感受</strong>：玩法融合度高，既保留了星穹铁道回合制的策略基底，又融入自走棋的阵容构建乐趣，高伤害数值反馈和段位晋升机制带来较强沉浸感，但高段位存在因敌方数值过高及 debuff 加持导致的策略固化问题</li>
+  </ul>
+</div>
+
+<h3>游戏主要特色 / 核心亮点</h3>
+<ul>
+  <li><strong>玩法融合创新</strong>：深度结合星穹铁道回合制核心与自走棋体系，新增前后排站位机制，差异化设计突出 IP 特色</li>
+  <li><strong>角色调整和优化</strong>：优化"牢角色"技能机制，通过数值映射让未养成角色也能参与，提升角色利用率</li>
+  <li><strong>策略自由度与引导平衡</strong>：提供阵容 / 装备推荐功能，适配自走棋新手；同时保留羁绊组合、投资策略等深度玩法</li>
+</ul>
+
+<div class="figure">
+  <img src="images/huobi/final/overview.jpg" alt="系统框架总览" loading="lazy">
+  <div class="figure-caption">系统框架总览</div>
+</div>
+
+</div>
+</section>
+
+<!-- ==================== CH.02 核心玩法流程和机制 ==================== -->
+<section class="chapter" id="ch2">
+<div class="chapter-header"><span class="chapter-num">CH.02</span><h2 class="chapter-title">核心玩法流程和机制</h2></div>
+<div class="chapter-content">
+
+<h3>核心体验闭环</h3>
+<p>选择模式 &rarr; 确定投资环境 &rarr; 备战阶段（D 牌 / 升星 / 激活羁绊）&rarr; 位面节点挑战（战斗 / 奖励 / 遭遇 / 补给）&rarr; 击败位面首领 &rarr; 根据剩余生命升段 &rarr; 获取资源奖励 &rarr; 解锁场外优势 &rarr; 挑战更高段位 / 难度</p>
+<div class="note note-accent"><strong>闭环说明</strong>：以"阵容构建&rarr;战斗挑战&rarr;奖励反馈&rarr;策略迭代"为核心循环，通过段位晋升和数值成长驱动玩家持续参与。</div>
+
+<div class="figure">
+  <img src="images/huobi/final/flowchart.jpg" alt="核心体验闭环流程图" loading="lazy">
+  <div class="figure-caption">核心体验闭环流程图</div>
+</div>
+
+<!-- 羁绊系统 -->
+<h3>a) 羁绊系统</h3>
+<div class="fig-row">
+  <div class="figure">
+    <img src="images/huobi/final/bond_framework.jpg" alt="羁绊系统框架图" loading="lazy">
+    <div class="figure-caption">羁绊系统框架图</div>
+  </div>
+  <div class="figure">
+    <img src="images/huobi/final/bond_detail.jpg" alt="羁绊分类详情" loading="lazy">
+    <div class="figure-caption">阵营 / 流派羁绊分类</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">系统规则</div>
+  <ul>
+    <li><strong>羁绊分类</strong>：12 类阵营羁绊（如狼狩、仙舟、贝洛伯格）+ 11 类流派羁绊（如追击、持续伤害、击破），部分角色可同时触发多类羁绊</li>
+    <li><strong>特殊机制</strong>：部分羁绊附带专属玩法（如夜之半神的月光精华、仙舟的神君召唤）</li>
+    <li><strong>激活条件</strong>：集齐对应数量羁绊内角色即可解锁分级效果，羁绊数越多加成越强（如狼狩 9 羁绊提供 90% 前后台强度 + 6 倍狼狩召唤物的经验）</li>
+  </ul>
+</div>
+
+<div class="table-wrap"><table><tbody>
+<tr><td>维度</td><td>分析</td></tr>
+<tr><td><strong>系统定位</strong></td><td>玩法核心策略支撑，决定阵容强度上限与战斗风格。通过羁绊组合创造多样化阵容，兼顾新手易上手与老手深挖掘的需求</td></tr>
+<tr><td><strong>用户体验</strong></td><td>高契合度羁绊组合能带来显著伤害提升，激活高等级羁绊时成就感强烈</td></tr>
+<tr><td><strong>优点</strong></td><td>羁绊类型丰富、效果差异化明显，与角色特性匹配度高</td></tr>
+<tr><td><strong>缺点</strong></td><td>高段位高难度阶段的公式化打法使用比较频繁，部分羁绊实用性低，缺乏平衡调整</td></tr>
+<tr><td><strong>改善意见</strong></td><td>优化部分羁绊的强度（比如追击羁绊打法前中期难过渡），新增羁绊制衡机制，避免单一阵容垄断高段位</td></tr>
+</tbody></table></div>
+
+<!-- 经济与等级系统 -->
+<h3>b) 经济与等级系统</h3>
+<div class="fig-row">
+  <div class="figure">
+    <img src="images/huobi/final/economy_framework.jpg" alt="经济系统框架图" loading="lazy">
+    <div class="figure-caption">经济与等级系统框架图</div>
+  </div>
+  <div class="figure">
+    <img src="images/huobi/final/economy_detail.jpg" alt="经济系统详情" loading="lazy">
+    <div class="figure-caption">金币 / 利息 / 商店机制</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">系统规则</div>
+  <ul>
+    <li><strong>金币机制</strong>：战斗结束结算利息（每 10 金币 + 1，上限 5 金币），连胜额外奖励，可用于刷新商店、购买角色 / 经验</li>
+    <li><strong>等级与人口</strong>：小队等级 = 上场角色数量（最高 10 人口），等级提升解锁高费角色卡概率</li>
+    <li><strong>商店规则</strong>：每回合自动刷新 1 次，手动刷新需 2 金币，部分事件可降低刷新成本或提供免费次数</li>
+  </ul>
+</div>
+
+<div class="table-wrap"><table><tbody>
+<tr><td>维度</td><td>分析</td></tr>
+<tr><td><strong>系统定位</strong></td><td>阵容构建的资源基础，决定阵容成型速度与强度上限</td></tr>
+<tr><td><strong>设计目的</strong></td><td>通过经济策略（存钱吃息 / 速升人口）增加玩法深度，让不同资源分配思路都能获得对应收益</td></tr>
+<tr><td><strong>用户体验</strong></td><td>前中期段位经济节奏适中，新手可通过基础规则快速上手，老手可通过利息计算和商店博弈优化阵容；但前期金币紧张时容错率较低</td></tr>
+<tr><td><strong>优点</strong></td><td>利息规则清晰，与自走棋经典机制接轨，学习成本低</td></tr>
+<tr><td><strong>缺点</strong></td><td>前期经济压力较大，部分低费阵容成型后难以对抗高费阵容</td></tr>
+<tr><td><strong>改善意见</strong></td><td>适当提高前期基础金币奖励，增加经济相关事件触发概率，平衡不同阵容成型节奏</td></tr>
+</tbody></table></div>
+
+<!-- 战斗与段位系统 -->
+<h3>c) 战斗与段位系统</h3>
+<div class="figure">
+  <img src="images/huobi/final/battle_framework.jpg" alt="战斗与段位系统框架图" loading="lazy">
+  <div class="figure-caption">战斗与段位系统框架图</div>
+</div>
+
+<div class="card">
+  <div class="card-title">系统规则</div>
+  <ul>
+    <li><strong>战斗流程</strong>：分为三个位面，每个位面包含战斗、奖励、遭遇、补给、首领五类节点，遭遇节点可选择难度（1-4 级）</li>
+    <li><strong>站位机制</strong>：角色分前台（承伤 + 手动操作）、后台（自动技能 + 不承伤）、前后台（前台后台都可以放置，但技能有一定变化）三类，站位影响伤害输出、生存、辅助能力</li>
+    <li><strong>段位规则</strong>：击败第三位面首领后，按剩余生命升段（失败不掉段），段位越高奖励越丰厚</li>
+  </ul>
+</div>
+
+<div class="table-wrap"><table><tbody>
+<tr><td>维度</td><td>分析</td></tr>
+<tr><td><strong>系统定位</strong></td><td>玩法核心挑战载体，连接阵容构建与奖励反馈的关键环节</td></tr>
+<tr><td><strong>设计目的</strong></td><td>通过梯度化难度设计，满足不同水平玩家的挑战需求，同时通过段位机制激发竞技动力</td></tr>
+<tr><td><strong>用户体验</strong></td><td>位面节点类型丰富，补给节点的装备获取和遭遇节点的难度选择增加策略性；首领战数值压力适中，高剩余生命升段时反馈强烈</td></tr>
+<tr><td><strong>优点</strong></td><td>节点设计多样，战斗节奏与回合制适配良好，段位晋升无惩罚机制友好</td></tr>
+<tr><td><strong>缺点</strong></td><td>高段位怪物专属 BUFF 过强，部分节点难度波动较大</td></tr>
+<tr><td><strong>改善意见</strong></td><td>优化高段位怪物 BUFF 数值，平衡不同节点的奖励与难度匹配度，或者给予玩家多一点的对策手段，避免难度陡增等问题</td></tr>
+</tbody></table></div>
+
+<div class="fig-row">
+  <div class="figure">
+    <img src="images/huobi/final/battle_screenshot1.jpg" alt="战斗游戏内截图1" loading="lazy">
+    <div class="figure-caption">游戏内截图（一）</div>
+  </div>
+  <div class="figure">
+    <img src="images/huobi/final/battle_screenshot2.jpg" alt="战斗游戏内截图2" loading="lazy">
+    <div class="figure-caption">游戏内截图（二）</div>
+  </div>
+</div>
+<div class="fig-row">
+  <div class="figure">
+    <img src="images/huobi/final/battle_screenshot3.jpg" alt="战斗游戏内截图3" loading="lazy">
+    <div class="figure-caption">游戏内截图（三）</div>
+  </div>
+  <div class="figure">
+    <img src="images/huobi/final/battle_screenshot4.jpg" alt="战斗游戏内截图4" loading="lazy">
+    <div class="figure-caption">游戏内截图（四）</div>
+  </div>
+</div>
+
+<div class="figure">
+  <img src="images/huobi/final/affix_attr.jpg" alt="词条属性" loading="lazy">
+  <div class="figure-caption">词条属性</div>
+</div>
+
+<!-- 装备系统 -->
+<h3>d) 装备系统</h3>
+<div class="fig-row">
+  <div class="figure">
+    <img src="images/huobi/final/equip_framework.jpg" alt="装备系统框架图" loading="lazy">
+    <div class="figure-caption">装备系统框架图</div>
+  </div>
+  <div class="figure">
+    <img src="images/huobi/final/equip_detail.jpg" alt="装备合成详情" loading="lazy">
+    <div class="figure-caption">装备合成规则</div>
+  </div>
+</div>
+<div class="figure">
+  <img src="images/huobi/final/equip_other.jpg" alt="装备词缀" loading="lazy">
+  <div class="figure-caption">装备词缀与羁绊徽章</div>
+</div>
+
+<div class="card">
+  <div class="card-title">系统规则</div>
+  <ul>
+    <li><strong>装备类型</strong>：简易装备、进阶装备、稀有装备（红钻 / 蓝钻 / 财富宝钻），部分羁绊附带专属装备（如昼之半神的白昼装备）</li>
+    <li><strong>合成规则</strong>：基础装备合成进阶装备，红钻 / 蓝钻可合成羁绊徽章（非对应羁绊角色可通过该装备激活该羁绊），双钻合成财富宝钻（+1 人口）</li>
+    <li><strong>词缀加成</strong>：含前台 / 后台强度、伤害增幅、幸运一击率等核心属性，装备词缀影响角色战力</li>
+  </ul>
+</div>
+
+<div class="table-wrap"><table><tbody>
+<tr><td>维度</td><td>分析</td></tr>
+<tr><td><strong>系统定位</strong></td><td>阵容强度的重要补充，与羁绊系统形成协同效应</td></tr>
+<tr><td><strong>设计目的</strong></td><td>通过装备搭配进一步细化阵容策略，提升玩法多样性</td></tr>
+<tr><td><strong>用户体验</strong></td><td>装备合成逻辑清晰，稀有装备的羁绊徽章和人口加成能显著改变战局；但装备获取随机性较强，部分核心装备难获取</td></tr>
+<tr><td><strong>优点</strong></td><td>装备与羁绊适配度高，稀有装备设计有亮点，提升策略深度</td></tr>
+<tr><td><strong>缺点</strong></td><td>获取随机性大，核心装备稀缺导致阵容成型稳定性不足</td></tr>
+<tr><td><strong>改善意见</strong></td><td>增加补给节点的装备选择范围，新增装备重铸的定向词缀功能，降低核心装备获取难度</td></tr>
+</tbody></table></div>
+
+<!-- 事件系统 -->
+<h3>e) 事件系统</h3>
+<div class="fig-row">
+  <div class="figure">
+    <img src="images/huobi/final/event_framework.jpg" alt="事件系统框架图" loading="lazy">
+    <div class="figure-caption">事件系统框架图</div>
+  </div>
+  <div class="figure">
+    <img src="images/huobi/final/event_detail1.jpg" alt="投资环境" loading="lazy">
+    <div class="figure-caption">投资环境（开局三选一）</div>
+  </div>
+  <div class="figure">
+    <img src="images/huobi/final/event_detail2.jpg" alt="投资策略" loading="lazy">
+    <div class="figure-caption">投资策略（银/金/棱彩）</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">系统规则</div>
+  <ul>
+    <li><strong>事件分类</strong>：投资环境（开局三选一，全局生效）、投资策略（单局获取 3 个，即时生效）</li>
+    <li><strong>品质分级</strong>：银色、金色、棱彩（加成强度依次提升）</li>
+    <li><strong>效果类型</strong>：含数值加成（如金币利息上限提升）、机制强化（如解锁高费角色）、资源获取（如直接获得装备）、生存保障（如恢复小队生命）</li>
+  </ul>
+</div>
+
+<div class="table-wrap"><table><tbody>
+<tr><td>维度</td><td>分析</td></tr>
+<tr><td><strong>系统定位</strong></td><td>单局玩法的策略变量，提升每局游戏的独特性与趣味性</td></tr>
+<tr><td><strong>设计目的</strong></td><td>通过随机事件打破固定阵容套路，增加玩法 replay 价值</td></tr>
+<tr><td><strong>用户体验</strong></td><td>棱彩品质事件能带来显著优势，事件选择过程中的策略权衡增加乐趣</td></tr>
+<tr><td><strong>优点</strong></td><td>事件类型丰富，效果差异化明显，提升玩法随机性与策略性</td></tr>
+<tr><td><strong>改善意见</strong></td><td>增强部分弱势事件的实用性</td></tr>
+</tbody></table></div>
+
+</div>
+</section>
+
+<!-- ==================== CH.03 社区评论分析 ==================== -->
+<section class="chapter" id="ch3">
+<div class="chapter-header"><span class="chapter-num">CH.03</span><h2 class="chapter-title">社区评论与论坛分析</h2></div>
+<div class="chapter-content">
+
+<!-- B站 -->
+<h3>B站</h3>
+<p>基于 2000 条 B 站评论数据，从数据有效性、情感倾向、用户关注焦点、用户画像四个维度展开分析。</p>
+
+<div class="card">
+  <div class="card-title">数据概况</div>
+  <ul>
+    <li>原始数据：<strong>2000 条</strong></li>
+    <li>无效评论：186 条（占比 9.3%）</li>
+    <li>有效分析样本：<strong>1814 条</strong>（占比 90.7%）</li>
+  </ul>
+</div>
+
+<p>B站是"货币战争"<span class="hl-accent">泛用户（轻度玩家、主线玩家）</span>的情感体验与基础诉求聚集地，讨论以"情绪表达、成果展示、基础痛点吐槽"为主，内容碎片化、娱乐化，反馈覆盖从玩法入门到高难体验的全情绪场景，缺乏深度策略分析。</p>
+
+<h4>主要讨论内容类型</h4>
+<ul>
+  <li>成果晒图类</li>
+  <li>情感与 IP 关联类</li>
+  <li>痛点吐槽类</li>
+  <li>梗文化类</li>
+  <li>优化诉求类</li>
+</ul>
+
+<div class="note"><strong>现象总结</strong>：B站用户对"货币战争"的关注核心是<strong>"情绪价值＞策略深度"</strong>——更在意玩法是否"解压、有趣、有成就感"，而非机制是否复杂、策略是否多元，反馈集中于"影响情绪体验的基础障碍"。</div>
+
+<div class="table-wrap"><table><tbody>
+<tr><td>类别</td><td>内容</td></tr>
+<tr><td><strong>成功点</strong></td><td>
+&bull; "牢"角色大放异彩引发情感共鸣（"牢角色焕发光彩"收获正面反馈）<br>
+&bull; 自走棋+回合制的玩法新鲜感，吸引主线玩家尝试<br>
+&bull; 奖励设置匹配泛用户预期（多数认为"星琼给的够用"）
+</td></tr>
+<tr><td><strong>缺憾</strong></td><td>
+&bull; 基础体验短板明显（教程冗长、自动 AI 逻辑混乱、战斗无倍速）<br>
+&bull; 高难设计失衡（A8 怪物 debuff 过强、血量过厚，导致体验从"解压"变"增压"）<br>
+&bull; 阵容固化（泛用户只能依赖少数热门阵容，冷门角色无适配空间）
+</td></tr>
+<tr><td><strong>改进期望</strong></td><td>
+&bull; 优化基础操作：开放教程跳过、战斗倍速、自动 AI 逻辑修复<br>
+&bull; 调整高难平衡：削弱 A8 怪物的不合理 debuff、降低高段位怪物血量<br>
+&bull; 拓展内容维度：新增未加入的 IP 角色、开放更高段位后的新玩法
+</td></tr>
+</tbody></table></div>
+
+<!-- NGA -->
+<h3>NGA</h3>
+<p>NGA是"货币战争"<span class="hl">核心玩家（硬核自走棋爱好者、数值党）</span>的深度策略探索与机制咨询社区，讨论以"理性实证、策略拆解、机制适配"为主，内容聚焦化、实用化，反馈围绕"策略有效性、高难适配性"，缺乏基础体验类吐槽。</p>
+
+<h4>主要讨论内容类型</h4>
+<ul>
+  <li>机制咨询类</li>
+  <li>阵容探索 / 分享类</li>
+</ul>
+
+<div class="note note-accent"><strong>现象总结</strong>：NGA用户对"货币战争"的关注核心是<strong>"策略有效性＞情绪体验"</strong>——更在意玩法的机制深度、阵容适配性，而非是否"解压、有趣"，反馈集中于"影响策略探索的机制障碍"。</div>
+
+<div class="table-wrap"><table><tbody>
+<tr><td>类别</td><td>内容</td></tr>
+<tr><td><strong>成功点</strong></td><td>
+&bull; 机制深度足够，提供了多元策略空间（如不同投资环境适配不同阵容）<br>
+&bull; 高难对局有探索价值，吸引核心玩家研究适配方案<br>
+&bull; 角色羁绊与 IP 设定结合紧密、牢角色重新焕发光彩，玩家的情绪价值和对游戏 IP/角色的情感得以进一步延伸
+</td></tr>
+<tr><td><strong>缺憾</strong></td><td>
+&bull; 高难阵容固化（A8 以上段位仅少数 T0 阵容能通关，很难看到阵容使用百花齐放的情况）<br>
+&bull; 长周期玩法不足（高段位通关后缺乏新策略探索方向）<br>
+&bull; 部分底费角色强度不够，存在感低，多数情况下仅用来凑羁绊
+</td></tr>
+<tr><td><strong>改进期望</strong></td><td>
+&bull; 拓展策略维度：新增羁绊组合、开放低费角色的高星魂专属效果<br>
+&bull; 优化信息展示：增加"羁绊预览""词条影响说明"功能<br>
+&bull; 平衡高难环境：削弱强势阵容的克制词条、增加高段位的策略选择空间
+</td></tr>
+</tbody></table></div>
+
+<!-- 社区总结 -->
+<h3>社区总结</h3>
+<p>结合两大平台的调研数据，"货币战争"玩法在社区内保持高讨论度与热度，这一现象印证了《星穹铁道》<span class="hl">"回合制核心+自走棋机制"</span>的融合设计具备可行性。从运营策略来看，该玩法作为常驻内容，搭配可获取的养成材料与道具，整体设计获得了多数玩家的认可——角色相关梗图、游玩趣事的广泛传播，也从侧面反映了玩家对该玩法的接受度与参与热情。</p>
+
+<p>此外，玩家普遍满意的点还包括：玩法中对<span class="hl-accent">"大数字伤害"</span>的呈现优化、部分角色原有痛点的修正，以及为特定角色定制的专属战斗动画/特效，这些设计精准契合了与角色有深度情感连接的玩家的心理需求。</p>
+
+<div class="card card-warn">
+  <div class="card-title">高难度环节负面反馈的核心原因</div>
+  <ul>
+    <li><strong>练度绑定与映射机制缺陷</strong>：玩法与角色外部练度强绑定，且"映射机制"（提供试用的未拥有/未养成角色）的面板属性及遗器搭配设计未能满足玩家预期。部分玩家反馈，若更换自定义遗器配置可实现通关，但映射角色的固定搭配导致难以取胜，进而产生"对零氪/微氪玩家不够公平"的认知</li>
+    <li><strong>策略门槛陡增</strong>：习惯轻量化日常玩法的玩家推进至 A7 段位、冲击 A8 及以上段位时，发现单纯复制热门推荐阵容已无法顺利通关上分。少数愿意深入研究策略的玩家对"阵容难以百花齐放"表示遗憾；多数玩家因缺乏时间与耐心探索策略，叠加高难副本中敌方高数值与专属 buff 加持，导致通关压力陡增，产生负面情绪与抵触心理</li>
+  </ul>
+</div>
+
+</div>
+</section>
+
+<!-- ==================== CH.04 马斯洛需求层次理论解读 ==================== -->
+<section class="chapter" id="ch4">
+<div class="chapter-header"><span class="chapter-num">CH.04</span><h2 class="chapter-title">马斯洛需求层次理论解读</h2></div>
+<div class="chapter-content">
+
+<p>结合马斯洛需求层次理论（生理需求 &rarr; 安全需求 &rarr; 归属与爱的需求 &rarr; 尊重需求 &rarr; 自我超越需求）解读"货币战争"玩法的玩家反馈逻辑。</p>
+
+<!-- 正向反馈 -->
+<h3>a) 玩法的正向反馈：低-中层需求的有效满足</h3>
+
+<div class="card card-brand">
+  <div class="card-title">1. 生理需求（游戏化转化：基础资源获取与玩法可行性）</div>
+  <p>马斯洛的"生理需求"对应游戏中玩家的核心生存与成长诉求，即通过低门槛参与获得实际收益。</p>
+  <p>"货币战争"作为常驻玩法，提供养成材料、道具等核心资源，让玩家无需高成本投入即可完成"资源积累"，满足了"付出即有回报"的基础预期；而"回合制+自走棋"的融合设计降低了入门门槛，即使是轻度玩家也能快速上手，避免了因玩法复杂度过高导致的"参与无门"，本质是对玩家"最低成本获取成长资源"这一需求的满足。</p>
+</div>
+
+<div class="card card-brand">
+  <div class="card-title">2. 安全需求（游戏化转化：公平感、可控性与环境稳定性）</div>
+  <p>安全需求的核心是"对稳定、公平、可预测环境的渴望"，这一点在玩法设计中体现为两方面：</p>
+  <ul>
+    <li><strong>正向满足</strong>：作为常驻玩法，其规则、奖励机制长期稳定，玩家可预判参与收益，避免了"临时玩法"的不确定性；"大数字伤害"优化、角色痛点修正等设计，让玩家感受到"自身操作/策略能直接影响结果"，增强了玩法可控性</li>
+    <li><strong>部分满足</strong>：映射机制本应是为零氪/微氪玩家提供"无练度门槛参与"的保障（满足"公平参与"的安全需求），但固定遗器与面板的设计反而削弱了可控性，成为后续负面反馈的诱因</li>
+  </ul>
+</div>
+
+<div class="card card-brand">
+  <div class="card-title">3. 归属与爱的需求（游戏化转化：情感连接与社区认同）</div>
+  <p>该需求聚焦"情感寄托"与"群体归属感"，玩法通过两大设计实现满足：</p>
+  <ul>
+    <li><strong>角色情感绑定</strong>：为特定角色定制专属战斗动画/特效，强化了玩家与角色的情感连接，让玩家在玩法中获得"被重视、被回应"的情感满足</li>
+    <li><strong>社区共鸣</strong>：角色梗图、游玩趣事的广泛传播，让玩家在社区中形成共同话题，通过分享与互动获得"群体认同"，满足了"归属社群"的需求——这也是玩法能保持高讨论度的核心原因之一</li>
+  </ul>
+</div>
+
+<div class="card card-brand">
+  <div class="card-title">4. 尊重需求（游戏化转化：成就感、能力认可与自我价值实现）</div>
+  <p>尊重需求分为"自我尊重"（对自身能力的认可）与"他人尊重"（获得他人认可），玩法在低-中难度环节充分满足了这一点：</p>
+  <ul>
+    <li><strong>低难度阶段</strong>：复制热门阵容即可通关上分，让轻度玩家快速获得"我能行"的成就感，满足基础自我尊重</li>
+    <li><strong>中难度阶段</strong>："大数字伤害"的视觉反馈、角色痛点的修正，让玩家感受到"自己的角色/策略被认可"，强化了自我价值感</li>
+    <li><strong>社区层面</strong>：分享通关攻略、梗图创作获得点赞互动，让玩家获得他人认可，进一步巩固尊重需求的满足</li>
+  </ul>
+</div>
+
+<!-- 负面反馈 -->
+<h3>b) 高难度环节的负面反馈：中-高层需求的未被满足</h3>
+
+<div class="card card-warn">
+  <div class="card-title">1. 安全需求的落空：公平感与可控性的缺失</div>
+  <p>高难度环节中，玩家的安全需求首先受到冲击：</p>
+  <ul>
+    <li><strong>练度绑定与映射机制缺陷</strong>：玩法与外部练度强绑定，且映射角色的固定遗器/面板无法自定义，导致玩家"即使策略正确，也因机制限制无法通关"，打破了"努力即有回报"的稳定预期</li>
+    <li><strong>公平性争议</strong>：零氪/微氪玩家认为"映射机制的不合理设计"让自己处于劣势，而氪金玩家可通过高练度角色轻松通关，这种"非自身能力导致的差距"让玩家产生"被不公平对待"的焦虑，安全需求彻底落空</li>
+  </ul>
+</div>
+
+<div class="card card-warn">
+  <div class="card-title">2. 尊重需求的受挫：成就感缺失与能力否定</div>
+  <p>高难度阶段（A8 及以上）对玩家策略深度的要求陡增，导致不同玩家的尊重需求均受到不同程度的冲击：</p>
+  <ul>
+    <li><strong>多数轻度玩家</strong>：缺乏时间与耐心研究策略，单纯复制热门阵容无法通关，原本"轻松获得成就感"的路径被阻断，产生"我不行"的自我否定，尊重需求受挫</li>
+    <li><strong>少数核心玩家</strong>：愿意深入研究策略，但高难度环节中"阵容难以百花齐放"（强势阵容垄断），导致自己的策略创意无法落地，"自身能力未被认可"的挫败感让尊重需求无法得到满足</li>
+  </ul>
+</div>
+
+<div class="card card-warn">
+  <div class="card-title">3. 自我超越需求的难以落地：挑战与回报的失衡</div>
+  <p>马斯洛的"自我超越需求"是指"突破自我极限、实现更高目标的渴望"，高难度玩法本应是满足这一需求的核心场景，但"货币战争"的设计存在明显失衡：</p>
+  <ul>
+    <li><strong>挑战门槛过高</strong>：敌方高数值+专属 buff 的设定，让玩家的"自我超越"更多依赖"练度碾压"或"长时间策略摸索"，而非"能力的自然突破"</li>
+    <li><strong>回报与投入不匹配</strong>：多数玩家为突破高难度付出的时间、精力成本，远高于获得的奖励，导致"超越自我"的价值感缺失，最终放弃挑战并产生负面情绪</li>
+  </ul>
+</div>
+
+<!-- 核心结论 -->
+<div class="judgment-box">
+  <div class="j-label">核心结论：玩法设计的本质是"需求层次的精准匹配"</div>
+  <div class="j-content">
+    <p>"货币战争"之所以能获得多数玩家认可，核心是精准匹配了<strong>"生理需求（资源获取）&rarr;归属与爱的需求（情感连接+社区认同）&rarr;尊重需求（基础成就感）"</strong>的低-中层需求；而高难度环节的负面反馈，本质是未能持续满足<strong>"安全需求（公平与可控）&rarr;尊重需求（深度成就感）&rarr;自我超越需求（合理挑战）"</strong>的中-高层需求。</p>
+    <p>从优化角度来看，若要改善高难度环节的玩家体验，需从需求满足角度切入：</p>
+    <ul>
+      <li><strong>满足安全需求</strong>：优化映射机制（开放部分遗器自定义、平衡面板属性），降低练度绑定，重塑公平感与可控性</li>
+      <li><strong>满足尊重需求</strong>：设计多维度通关路径（如"策略型""数值型""娱乐型"），让不同类型玩家都能获得成就感</li>
+      <li><strong>满足自我超越需求</strong>：合理控制高难度环节的数值门槛，强化"策略突破"的价值（如专属称号、创意阵容奖励），让"超越自我"的回报与投入相匹配</li>
+    </ul>
+  </div>
+</div>
+
+</div>
+</section>
+
+<!-- ==================== CH.05 游戏整体评价 ==================== -->
+<section class="chapter" id="ch5">
+<div class="chapter-header"><span class="chapter-num">CH.05</span><h2 class="chapter-title">游戏整体评价</h2></div>
+<div class="chapter-content">
+
+<h3>1. 游戏优势</h3>
+<ul>
+  <li><strong>玩法融合度高</strong>：成功将原本的回合制玩法与自走棋玩法的核心机制结合，保留 IP 特色的同时带来新鲜体验，适配星穹铁道玩家群体以及对自走棋这类策略玩法感兴趣的玩家群体</li>
+  <li><strong>角色价值激活</strong>：通过技能调整与数值映射，让"牢角色"和未养成角色发挥价值，提升玩家的游玩动力</li>
+  <li><strong>引导完善</strong>：提供阵容 / 装备推荐，兼顾新手与老手需求</li>
+  <li><strong>奖励体系完善</strong>：星琼、养成资源等奖励与段位挂钩，场外永久加成提供长期成长目标，驱动力充足</li>
+</ul>
+
+<h3>2. 游戏劣势</h3>
+<ul>
+  <li><strong>高段位阵容固化</strong>：紫金段位以上的高难段位环境，适合游玩的阵容组合高度集中在部分"轮椅"阵容（如"双鞋阿格莱雅"和"反甲白厄"），高压环境的阵容探索空间被压缩，玩家情绪的负反馈增多，容易降低重复游玩的兴趣</li>
+  <li><strong>练度桎梏仍未解除</strong>：尽管存在数值映射机制，但角色自身练度、星魂对高难度挑战的影响仍十分显著。例如高段位玩法中，生存定位的风堇在数值映射的试玩状态下，与玩家自主养成的毕业状态体验差距极大——试玩角色速度低于毕业配置，面对敌方高速高伤害的高压环境，往往因未能及时开出技能而丧失生存能力</li>
+</ul>
+
+<h3>3. 改善意见</h3>
+<ul>
+  <li><strong>角色补全</strong>：逐步将未纳入的星穹铁道角色加入玩法，完善角色池覆盖</li>
+  <li><strong>练度优化</strong>：降低高难度挑战中角色练度 / 星魂的影响权重，强化玩法内数值映射的公平性</li>
+  <li><strong>内容更新</strong>：推出赛季制更新，新增羁绊体系、装备类型与事件效果，保持玩法新鲜感</li>
+</ul>
+
+<h3>4. 总结分析</h3>
+<div class="judgment-box">
+  <div class="j-label">总结</div>
+  <div class="j-content">
+    <p>"货币战争" 作为星穹铁道的常驻大型玩法，通过回合制与自走棋的创新融合，成功激活了角色价值并提供了深度策略体验，其完善的奖励体系与场外成长机制有效提升了玩家留存。</p>
+    <p>尽管在高段位平衡、角色覆盖等方面存在不足，但核心玩法框架成熟，适配 IP 调性与玩家需求。随着后续平衡调整与内容更新，有望成为星穹铁道的核心玩法支柱，进一步提升游戏整体活跃度与生命周期。</p>
+  </div>
+</div>
+
+</div>
+</section>
+
+</div><!-- /container -->
+
+<footer>
+  <div class="ft-brand">HSR &middot; CURRENCY WAR</div>
+  <p>崩坏：星穹铁道「货币战争」玩法拆解分析报告</p>
+  <p>作者：XYBaki &middot; 游玩 200+ 小时 &middot; 段位 A8-20</p>
+</footer>
+
+<a href="#" class="back-top" id="backTop" onclick="window.scrollTo({top:0,behavior:'smooth'});return false">&uarr;</a>
+
+<div class="lightbox" id="lightbox" onclick="this.classList.remove('show')">
+  <img id="lightboxImg" src="" alt="放大查看">
+</div>
+
+<script>
+var bar=document.getElementById('progressBar'),pt=document.getElementById('progText'),bt=document.getElementById('backTop');
+window.addEventListener('scroll',function(){
+  var h=document.documentElement;
+  var p=(h.scrollTop/(h.scrollHeight-h.clientHeight))*100;
+  bar.style.width=p+'%';pt.textContent=Math.round(p)+'%';
+  bt.classList.toggle('show',h.scrollTop>400);
+});
+var nls=document.querySelectorAll('.topbar-nav a');
+var scs=document.querySelectorAll('.chapter');
+function upNav(){var y=window.scrollY+100,a='';scs.forEach(function(s){if(s.offsetTop<=y)a=s.id;});nls.forEach(function(l){l.classList.toggle('active',l.getAttribute('href')==='#'+a);});}
+window.addEventListener('scroll',upNav);upNav();
+document.querySelectorAll('.figure img').forEach(function(img){
+  img.addEventListener('click',function(){var lb=document.getElementById('lightbox');document.getElementById('lightboxImg').src=this.src;lb.classList.add('show');});
+});
+</script>
+
+<script>
+(function() {
+  var images = document.querySelectorAll('.figure img:not([src^="data:"])');
+  if ('IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function(entries, observer) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          var img = entry.target;
+          if (img.complete && img.naturalWidth > 0) { img.classList.add('loaded'); }
+          else { img.addEventListener('load', function() { img.classList.add('loaded'); }); img.addEventListener('error', function() { img.style.opacity='0.3'; img.classList.add('loaded'); }); }
+          observer.unobserve(img);
+        }
+      });
+    }, { rootMargin: '300px 0px', threshold: 0.01 });
+    images.forEach(function(img) { io.observe(img); });
+  } else {
+    images.forEach(function(img) { img.classList.add('loaded'); });
+  }
+})();
+</script>
+
+</body>
+</html>
